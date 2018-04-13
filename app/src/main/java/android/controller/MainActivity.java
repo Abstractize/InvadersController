@@ -24,9 +24,13 @@ import java.net.Socket;
 public class MainActivity extends Activity implements SensorEventListener{
     //Botones y Labels
     Button bshoot;
+    String Score;
+    String Level;
+    String Row;
+    String Next;
+
     //Cliente de Servidor
     Socket client;
-    client c;
     BufferedReader input;
     PrintStream output;
     String messageOut="3";
@@ -41,63 +45,64 @@ public class MainActivity extends Activity implements SensorEventListener{
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
-                .permitNetwork().build());
-        c = new client(this);
-        c.start();
+
 
         bshoot= (Button) findViewById(R.id.Shot);
         bshoot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 messageOut = "1";
+                new Thread(new ClientThread()).start();
             }
         });
     }
-    public void init() {
-        String ip = "192.168.1.106";
-        int port = 9000;
 
-        try {
-            client = new Socket(ip, port);
-            input = new BufferedReader( new InputStreamReader(client.getInputStream()));
-            output = new PrintStream(client.getOutputStream());
+    public void spliter(String str){
+        String[] parts = str.split(",");
+        Score = parts[0];
+        Level = parts[1];
+        Row = parts[2];
+        Next = parts[3];
 
-        } catch (Exception e) {
+    }
 
+
+
+
+
+
+
+
+    class ClientThread implements Runnable {
+        @Override
+        public void run(){
+            String ip = "192.168.1.106";
+            int port = 9000;
+            messageOutOld = messageOut;
+            try {
+
+                client = new Socket(ip, port);
+                input = new BufferedReader( new InputStreamReader(client.getInputStream()));
+                output = new PrintStream(client.getOutputStream());
+                output.println(messageOut);
+
+
+                messageIn = input.readLine();
+                spliter(messageIn);
+                input.close();
+                output.close();
+                client.close();
+
+
+
+            } catch (Exception e) {
+
+            }
         }
     }
     public boolean isRefreshed(){
         return (messageOut != messageOutOld);
     }
-    public void infoTrade(){
-        try{
-
-                output.println(messageOut);
-                messageOutOld=messageOut;
-
-
-
-                messageIn = input.readLine();
-
-
-
-        }catch (Exception e){
-
-        }
-    }
-    private void finit(){
-        try{
-            input.close();
-            output.close();
-            client.close();
-        }catch (Exception e){
-
-        }
-    }
-
-
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -107,13 +112,11 @@ public class MainActivity extends Activity implements SensorEventListener{
             sm.registerListener(this, sensors.get(0), SensorManager.SENSOR_DELAY_GAME);
         }
     }
-
     @Override
     protected void onStop() {
         SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
         sm.unregisterListener(this);
         super.onStop();
-        finit();
     }
 
     @Override
@@ -136,6 +139,7 @@ public class MainActivity extends Activity implements SensorEventListener{
 
             }
             long time_difference = current_time - last_update;
+
             if (time_difference > 0) {
 
                 float movement = Math.abs((curY) - (prevY)) / time_difference;
@@ -149,15 +153,29 @@ public class MainActivity extends Activity implements SensorEventListener{
                 prevY = curY;
                 last_update = current_time;
             }
-            if ((int)curY>0){
+            if ((int)curY == 1){
                 messageOut="2";
-            }else if((int)curY < 0){
+                if (isRefreshed()){
+                    new Thread(new ClientThread()).start();
+                }
+            }if((int)curY == -1){
                 messageOut=("3");
-            }else if((int)curY == 0){
+                if (isRefreshed()){
+                    new Thread(new ClientThread()).start();
+                }
+            }if((int)curY == 0){
                 messageOut=("0");
+                if (isRefreshed()){
+                    new Thread(new ClientThread()).start();
+                }
             }
 
+
             ((TextView) findViewById(R.id.txtAccY)).setText("Acelerómetro Y: " + (int)curY);
+            ((TextView) findViewById(R.id.Score)).setText("Score: " + Score);
+            ((TextView) findViewById(R.id.Level)).setText("Level: " + Level);
+            ((TextView) findViewById(R.id.Row)).setText("Now: " + Row);
+            ((TextView) findViewById(R.id.Next)).setText("Next: " + Next);
 
         }
 
