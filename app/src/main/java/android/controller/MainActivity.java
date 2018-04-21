@@ -65,7 +65,14 @@ public class MainActivity extends Activity implements SensorEventListener{
         Next = parts[3];
 
     }
-
+    //Se tuvo que crear para pasar de lista de java a Lista normal y usarla
+    public Lista toList(List<Sensor> oldList){
+        Lista newList= new Lista();
+        for (int i=0;i<oldList.size();i++){
+            newList.add(oldList.get(i));
+        }
+        return newList;
+    }
 
 
 
@@ -76,6 +83,7 @@ public class MainActivity extends Activity implements SensorEventListener{
     class ClientThread implements Runnable {
         @Override
         public void run(){
+            //Se necesita cambiar el Ip
             String ip = "192.168.1.106";
             int port = 9000;
             messageOutOld = messageOut;
@@ -106,10 +114,12 @@ public class MainActivity extends Activity implements SensorEventListener{
     @Override
     protected void onResume() {
         super.onResume();
+
         SensorManager sm = (SensorManager) getSystemService(SENSOR_SERVICE);
-        List<Sensor> sensors = sm.getSensorList(Sensor.TYPE_ACCELEROMETER);
-        if (sensors.size() > 0) {
-            sm.registerListener(this, sensors.get(0), SensorManager.SENSOR_DELAY_GAME);
+        Lista sensors =   toList(sm.getSensorList(Sensor.TYPE_ACCELEROMETER));
+        //Error de tipos, se tuvo que crear un método que pasara de lista util de java a una de creador
+        if (sensors.getLength() > 0) {
+            sm.registerListener(this, sensors.getValue(0), SensorManager.SENSOR_DELAY_GAME);
         }
     }
     @Override
